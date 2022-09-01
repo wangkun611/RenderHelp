@@ -35,6 +35,10 @@
 #include <sstream>
 #include <iostream>
 
+#ifdef WIN32
+#include <Windows.h>
+#endif // WIN32
+
 
 //---------------------------------------------------------------------
 // 数学库：矢量定义
@@ -1017,6 +1021,21 @@ public:
 		return true;
 	}
 
+#ifdef _WIN32
+	inline bool BitBlt(HDC hdc, RECT* rect) {
+		BITMAPINFO bmi = { 0 };
+		bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
+		bmi.bmiHeader.biWidth = GetW();
+		bmi.bmiHeader.biHeight = -GetH();
+		bmi.bmiHeader.biPlanes = 1;
+		bmi.bmiHeader.biBitCount = 32;
+		bmi.bmiHeader.biCompression = 0;
+
+		return StretchDIBits(hdc, rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top,
+			rect->left, rect->top, rect->right - rect->left, rect->bottom - rect->top, _bits, &bmi, DIB_RGB_COLORS, SRCCOPY);
+	}
+#endif // _WIN32
+
 	// 双线性插值
 	inline uint32_t SampleBilinear(float x, float y) const {
 		int32_t fx = (int32_t)(x * 0x10000);
@@ -1207,6 +1226,9 @@ public:
 
 	// 保存 FrameBuffer 到 BMP 文件
 	inline void SaveFile(const char *filename) { if (_frame_buffer) _frame_buffer->SaveFile(filename); }
+#ifdef WIN32
+	inline void BitBlt(HDC hdc, RECT* rect) { if (_frame_buffer) _frame_buffer->BitBlt(hdc, rect); }
+#endif // WIN32
 
 	// 设置背景/前景色
 	inline void SetBGColor(uint32_t color) { _color_bg = color; }
